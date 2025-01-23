@@ -1,7 +1,6 @@
 up:
 	@docker compose up -d --build
 	@docker exec yamusphp composer install
-	@sleep 10
 
 parse:
 	@docker exec yamusphp php Example.php
