@@ -1,0 +1,29 @@
+version: '3'
+
+silent: true
+
+tasks:
+  execute:
+    cmds:
+      - task: up
+      - task: parse
+      - task: showArtists
+      - task: showTracks
+  up:
+    cmds:
+      - docker compose up -d --build
+      - docker exec yamusphp composer install
+  down:
+    cmds:
+      - docker compose down
+      - docker volume rm yamusdb
+      - echo "Thank you and see you in future ;)"
+  parse:
+    cmds:
+      - docker exec -it yamusphp php Example.php
+  showArtists:
+    cmds:
+      - docker exec -it yamusmysql mysql -u root -proot -D yandex_music -e "select * from artists limit 5"
+  showTracks:
+    cmds:
+      - docker exec -it yamusmysql mysql -u root -proot -D yandex_music -e "select * from tracks limit 5"

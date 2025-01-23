@@ -1,0 +1,38 @@
+services:
+  php:
+    build:
+      context: ./php
+    container_name: yamusphp
+    tty: true
+    networks:
+      - yanet
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0.40-bookworm
+    container_name: yamusmysql
+    volumes:
+      - yamusdb:/var/lib/mysql
+      - ./Db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - yanet
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  yanet:
+
+volumes:
+  yamusdb:
+    name: "yamusdb"

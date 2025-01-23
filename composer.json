@@ -1,0 +1,22 @@
+{
+    "name": "root/app",
+    "description": "parsing yandex music artists",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "authors": [
+        {
+            "name": "pavel ivanov"
+        }
+    ],
+    "require": {
+        "masterminds/html5": "^2.0",
+        "ext-pdo": "*",
+        "ext-dom": "*"
+    },
+    "config": {
+        "COMPOSER_ALLOW_SUPERUSER": 1
+    }
+}
