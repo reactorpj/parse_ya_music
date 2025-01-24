@@ -3,6 +3,7 @@
 namespace App;
 
 use App\Db\Repository;
+use App\Entity\Artist;
 use App\Entity\Track;
 use App\Http\YaMusicClient;
 use App\Parser\ArtistHtmlHtmlParser;
@@ -36,24 +37,9 @@ class YandexMusicParser
 
 	public function execute(): void
 	{
-		$tracksContent = $this->client->getTracksContent();
-		$artistContent = $this->client->getArtistContent();
+		$artist = $this->parseArist();
 
-		$this->artistParser->parse($artistContent);
-		$artist = $this->artistParser->getArtist();
-		$artist->outerId = $this->artistId;
-
-		$artist = $this->saveArtist($artist);
-
-		$this->tracksParser->parse($tracksContent);
-		$tracks = $this->tracksParser->getTracks($artist->id);
-
-		$this->saveTracks($tracks, $artist->id);
-
-		if ($tracks->count() === 100)
-		{
-			$this->reloadTracks($artist);
-		}
+		$this->parseTracks($artist);
 	}
 
 	/**
@@ -102,7 +88,7 @@ class YandexMusicParser
 			$this->saveTracks($collection, $artist->id);
 
 			$page++;
-		} while ($collection->count() < 100 && $collection->count() > 0);
+		} while ($this->hasNextPageTracks($collection));
 	}
 
 	private function saveArtist(Entity\Artist $artist): Entity\Artist
@@ -129,5 +115,39 @@ class YandexMusicParser
 
 			$this->repo->addTrack($track, $artistId);
 		}
+	}
+
+	private function parseArist(): Artist
+	{
+		$artistContent = $this->client->getArtistContent();
+		$this->artistParser->parse($artistContent);
+		$artist = $this->artistParser->getArtist();
+		$artist->outerId = $this->artistId;
+
+		return $this->saveArtist($artist);
+	}
+
+	private function parseTracks(Artist $artist): void
+	{
+		$tracksContent = $this->client->getTracksContent();
+		$this->tracksParser->parse($tracksContent);
+		$tracks = $this->tracksParser->getTracks($artist->id);
+
+		$this->saveTracks($tracks, $artist->id);
+
+		if ($this->hasReloadTracks($tracks))
+		{
+			$this->reloadTracks($artist);
+		}
+	}
+
+	private function hasNextPageTracks(Entity\TrackCollection $collection): bool
+	{
+		return $collection->count() < 100 && $collection->count() > 0;
+	}
+
+	private function hasReloadTracks(Entity\TrackCollection $tracks): bool
+	{
+		return $tracks->count() === 100;
 	}
 }
