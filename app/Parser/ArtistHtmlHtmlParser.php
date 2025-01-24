@@ -72,7 +72,7 @@ class ArtistHtmlHtmlParser extends HtmlParser
 		return 0;
 	}
 
-	public function parseNumber(?string $value = ''): ?string
+	private function parseNumber(?string $value = ''): ?string
 	{
 		return preg_replace("/[^0-9]/", "", $value);
 	}
