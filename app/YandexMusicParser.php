@@ -3,12 +3,14 @@
 namespace App;
 
 use App\Db\Repository;
+use App\Entity\Track;
 use App\Http\YaMusicClient;
 use App\Parser\ArtistHtmlHtmlParser;
 use App\Parser\TrackHtmlHtmlParser;
 use App\Parser\TrackJsonParser;
 use Exception;
 
+require "Config/Init.php";
 
 class YandexMusicParser
 {
@@ -37,18 +39,17 @@ class YandexMusicParser
 		$tracksContent = $this->client->getTracksContent();
 		$artistContent = $this->client->getArtistContent();
 
-
-
 		$this->artistParser->parse($artistContent);
 		$artist = $this->artistParser->getArtist();
 		$artist->outerId = $this->artistId;
 
-		$this->repo->addArtist($artist);
+		$artist = $this->saveArtist($artist);
 
 		$this->tracksParser->parse($tracksContent);
-		$tracks = $this->tracksParser->getTracks();
+		$tracks = $this->tracksParser->getTracks($artist->id);
 
-		$this->repo->addTracks($tracks, $artist);
+		$this->saveTracks($tracks, $artist->id);
+
 		if ($tracks->count() === 100)
 		{
 			$this->reloadTracks($artist);
@@ -97,10 +98,36 @@ class YandexMusicParser
 				return;
 			}
 
-			$collection = $this->jsonTrackParser->parseTracks($result['tracks']);
-			$this->repo->addTracks($collection, $artist);
+			$collection = $this->jsonTrackParser->parseTracks($result['tracks'], $artist->id);
+			$this->saveTracks($collection, $artist->id);
 
 			$page++;
-		} while ($collection->count() < 100);
+		} while ($collection->count() < 100 && $collection->count() > 0);
+	}
+
+	private function saveArtist(Entity\Artist $artist): Entity\Artist
+	{
+		if ($existsArtist = $this->repo->getArtist($artist->outerId))
+		{
+			return $this->repo->updateArtist($artist, $existsArtist->id);
+		}
+
+		return $this->repo->addArtist($artist);
+	}
+
+	private function saveTracks(Entity\TrackCollection $tracks, int $artistId): void
+	{
+		/** @var Track $track */
+		foreach ($tracks->toArray() as $track)
+		{
+			if ($existsTrack = $this->repo->getTrackByOuterId($track->outerId))
+			{
+				$this->repo->updateTrack($track, $existsTrack->id);
+
+				continue;
+			}
+
+			$this->repo->addTrack($track, $artistId);
+		}
 	}
 }

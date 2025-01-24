@@ -7,12 +7,12 @@ use App\Entity\TrackCollection;
 
 class TrackJsonParser
 {
-	public function parseTracks(array $tracks): TrackCollection
+	public function parseTracks(array $tracks, int $artistId): TrackCollection
 	{
-		return $this->makeTracksCollection($tracks);
+		return $this->makeTracksCollection($tracks, $artistId);
 	}
 
-	private function makeTracksCollection(array $tracks): TrackCollection
+	private function makeTracksCollection(array $tracks, int $artistId): TrackCollection
 	{
 		$data = [];
 
@@ -23,6 +23,7 @@ class TrackJsonParser
 			$entity->title = $track['title'];
 			$entity->outerId = $track['id'];
 			$entity->duration = $this->getDurationFromMs($track['durationMs']);
+			$entity->artistId = $artistId;
 
 			$data[] = $entity;
 		}
@@ -30,21 +31,13 @@ class TrackJsonParser
 		return new TrackCollection($data);
 	}
 
-	public function getDurationFromMs(?int $durationMs): string
+	public function getDurationFromMs(?int $durationMs): int
 	{
 		if ($durationMs === null)
 		{
 			return '';
 		}
 
-		$duration = (int)($durationMs / 1000);
-		$minutes = (int)($duration / 60);
-		$seconds = ($duration % 60);
-		if ($seconds < 10)
-		{
-			$seconds = '0' . $seconds;
-		}
-
-		return "$minutes:$seconds";
+		return (int)($durationMs / 1000);
 	}
 }

@@ -19,17 +19,6 @@ class Repository
 
 	public function addArtist(Artist $artist): Artist
 	{
-		$exists = $this->getArtist($artist->outerId);
-
-		if ($exists !== null)
-		{
-			$this->updateArtist($artist, $exists->id);
-			$artist->id = $exists->id;
-
-			return $artist;
-
-		}
-
 		$statement = $this->db->prepare('INSERT INTO artists (outer_id, title, favorite_count, audition_count, album_count) VALUES(:outerId, :title, :favoriteCount, :auditionCount, :albumCount)');
 		$statement->bindValue(':outerId', $artist->outerId);
 		$statement->bindValue(':title', $artist->title);
@@ -54,39 +43,14 @@ class Repository
 		return $artist;
 	}
 
-	public function addTracks(TrackCollection $tracks, Artist $artist): void
+	public function addTrack(Track $track, int $artistId): Track
 	{
-		/** @var Track $track */
-		foreach ($tracks->toArray() as $track)
-		{
-			try
-			{
-				$this->addTrack($track, $artist);
-			}
-			catch (RuntimeException $e)
-			{
-				var_dump($e->getMessage());
-				continue;
-			}
-		}
-	}
-
-	public function addTrack(Track $track, Artist $artist): void
-	{
-		$exists = $this->getTrack($track->outerId);
-		if ($exists !== null)
-		{
-			$this->updateTrack($track, $exists->id);
-
-			return;
-		}
-
 		$statement = $this->db->prepare('INSERT INTO tracks (outer_id, title, duration, artist_id) VALUES (:outerId, :title, :duration, :artistId)');
 
 		$statement->bindValue(':outerId', $track->outerId);
 		$statement->bindValue(':title', $track->title);
 		$statement->bindValue(':duration', $track->duration);
-		$statement->bindValue(':artistId', $artist->id, PDO::PARAM_INT);
+		$statement->bindValue(':artistId', $artistId, PDO::PARAM_INT);
 
 		$this->db->exec($statement);
 		$id = $this->db->getLastId('tracks');
@@ -96,9 +60,11 @@ class Repository
 		}
 
 		$track->id = (int)$id;
+
+		return $track;
 	}
 
-	public function updateArtist(Artist $artist, int $id): void
+	public function updateArtist(Artist $artist, int $id): Artist
 	{
 		$statement = $this->db->prepare('update artists set title=:title, favorite_count=:favorite_count, audition_count=:audition_count, album_count=:album_count WHERE id=:id');
 		$statement->bindValue(':title', $artist->title);
@@ -115,11 +81,32 @@ class Repository
 		{
 			throw new RuntimeException('Could not update track');
 		}
+
+		$artist->id = $id;
+
+		return $artist;
+	}
+
+	public function updateTrack(Track $track, int $id): Track
+	{
+		$statement = $this->db->prepare('update tracks set title=:title, duration=:duration WHERE id=:id');
+
+		$statement->bindValue(':title', $track->title);
+		$statement->bindValue(':duration', $track->duration);
+		$statement->bindValue(':id', $id);
+
+		$result = $this->db->exec($statement);
+		if (!$result)
+		{
+			throw new RuntimeException('Could not update track');
+		}
+
+		return $this->getTrack($id);
 	}
 
 	public function getArtist(string $outerId): ?Artist
 	{
-		$statement = $this->db->prepare('SELECT * FROM artists WHERE outer_id = :outerId limit 1');
+		$statement = $this->db->prepare('SELECT id, outer_id, title, favorite_count, audition_count, album_count FROM artists WHERE outer_id = :outerId');
 		$statement->bindValue(':outerId', $outerId);
 		$result = $this->db->fetch($statement);
 		if ($result === false)
@@ -138,9 +125,9 @@ class Repository
 		return $artist;
 	}
 
-	public function getTrack(string $outerId): ?Track
+	public function getTrackByOuterId(string $outerId): ?Track
 	{
-		$statement = $this->db->prepare('SELECT * FROM tracks WHERE outer_id = :outerId limit 1');
+		$statement = $this->db->prepare('SELECT id, title, duration, artist_id, outer_id FROM tracks WHERE outer_id = :outerId');
 		$statement->bindValue(':outerId', $outerId);
 		$result = $this->db->fetch($statement);
 		if ($result === false)
@@ -148,26 +135,32 @@ class Repository
 			return null;
 		}
 
-		$track = new Track();
-		$track->id = (int)$result['id'];
-		$track->title = $result['title'];
-		$track->duration = $result['duration'];
-
-		return $track;
+		return $this->fillTrack($result);
 	}
 
-	private function updateTrack(Track $track, int $id): void
+	public function getTrack(int $id): ?Track
 	{
-		$statement = $this->db->prepare('update tracks set title=:title, duration=:duration WHERE id=:id');
-
-		$statement->bindValue(':title', $track->title);
-		$statement->bindValue(':duration', $track->duration);
+		$statement = $this->db->prepare('SELECT id, title, duration, artist_id, outer_id FROM tracks WHERE id = :id');
 		$statement->bindValue(':id', $id);
-
-		$result = $this->db->exec($statement);
-		if (!$result)
+		$result = $this->db->fetch($statement);
+		if (!is_array($result))
 		{
-			throw new RuntimeException('Could not update track');
+			return null;
 		}
+
+		return $this->fillTrack($result);
+	}
+
+	private function fillTrack(array $result): Track
+	{
+		$track = new Track();
+
+		$track->id = $result['id'];
+		$track->title = $result['title'];
+		$track->duration = $result['duration'];
+		$track->artistId = $result['artist_id'];
+		$track->outerId = $result['outer_id'];
+
+		return $track;
 	}
 }

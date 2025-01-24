@@ -27,3 +27,9 @@ tasks:
   showTracks:
     cmds:
       - docker exec -it yamusmysql mysql -u root -proot -D yandex_music -e "select * from tracks limit 5"
+  artists:
+    cmds:
+      - docker exec -it yamusmysql mysql -u root -proot -D yandex_music -e "select * from artists"
+  tracks:
+    cmds:
+      - docker exec -it yamusmysql mysql -u root -proot -D yandex_music -e "select * from tracks"

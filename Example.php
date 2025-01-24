@@ -18,6 +18,5 @@ foreach ($links as $link) {
 	}
 }
 
+echo 'Parsing finished';
 
-exit();
-//die();

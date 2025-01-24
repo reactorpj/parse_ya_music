@@ -11,7 +11,12 @@ class Db
 
 	private function __construct()
 	{
-		$this->pdo = new PDO('mysql:host=yamusmysql;dbname=yandex_music;charset=utf8', 'root', 'root');
+		$host = env('DB_HOST');
+		$dbName = env('DB_NAME');
+		$password = env('DB_PASSWORD');
+		$user = env('DB_USER');
+
+		$this->pdo = new PDO("mysql:host={$host};dbname={$dbName};charset=utf8", $user, $password);
 	}
 
 

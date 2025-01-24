@@ -13,8 +13,16 @@
 Для просмотра результата парсинга можно воспользоваться командами:
  - make showArtists
  - make showTracks
+
  - task showArtists
  - task showTracks
+
+Чтобы увидеть всех артистов и треки можно воспользоваться командами:
+ - make artists
+ - make tracks
+
+ - task artists
+ - task tracks
 
 Бесследное удаление контейреов, сетей, хранилищ:
   - make down

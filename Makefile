@@ -11,6 +11,12 @@ showArtists:
 showTracks:
 	@docker exec yamusmysql mysql -u root -proot -D yandex_music -e "select * from tracks limit 5" --table
 
+artists:
+	@docker exec yamusmysql mysql -u root -proot -D yandex_music -e "select * from artists" --table
+
+tracks:
+	@docker exec yamusmysql mysql -u root -proot -D yandex_music -e "select * from tracks" --table
+
 execute:
 	@up @parse @showArtists @showTracks
 
