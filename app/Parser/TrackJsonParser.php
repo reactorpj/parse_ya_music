@@ -35,7 +35,7 @@ class TrackJsonParser
 	{
 		if ($durationMs === null)
 		{
-			return '';
+			return 0;
 		}
 
 		return (int)($durationMs / 1000);
