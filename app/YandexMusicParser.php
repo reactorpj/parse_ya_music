@@ -118,7 +118,7 @@ class YandexMusicParser
 	private function saveTracks(Entity\TrackCollection $tracks, int $artistId): void
 	{
 		/** @var Track $track */
-		foreach ($tracks->toArray() as $track)
+		foreach ($tracks as $track)
 		{
 			if ($existsTrack = $this->repo->getTrackByOuterId($track->outerId))
 			{
